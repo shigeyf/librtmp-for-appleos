@@ -1,0 +1,47 @@
+#
+# Makefile for iPhoneOS (arm64)
+#
+
+VERSION=v2.4
+
+ARCH=@ARCH@
+PLATFORM=@PLATFORM@
+CROSS_COMPILE=xcrun -sdk $(PLATFORM) 
+CC=$(CROSS_COMPILE)cc
+LD=$(CROSS_COMPILE)ld
+AR=$(CROSS_COMPILE)ar
+
+SYS=darwin
+CRYPTO=OPENSSL
+#CRYPTO=GNUTLS
+
+DEF_POLARSSL=-DUSE_POLARSSL
+DEF_OPENSSL=-DUSE_OPENSSL
+DEF_GNUTLS=-DUSE_GNUTLS
+DEF_=-DNO_CRYPTO
+CRYPTO_DEF=$(DEF_$(CRYPTO))
+
+SRCDIR=../librtmp
+INC=-I$(SRCDIR)/../openssl/include/
+DEF=-DRTMPDUMP_VERSION=\"$(VERSION)\" $(CRYPTO_DEF) $(XDEF)
+COPTS=-arch $(ARCH) -fno-common -fembed-bitcode
+CFLAGS=-Wall -O2 $(XCFLAGS) $(INC) $(DEF) $(COPTS)
+
+OBJS=rtmp.o log.o amf.o hashswf.o parseurl.o
+
+all:	librtmp-$(PLATFORM)-$(ARCH).a
+
+clean:
+	rm -f *.o *.a
+
+%.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+librtmp-$(PLATFORM)-$(ARCH).a: $(OBJS)
+	$(AR) rs $@ $?
+
+log.o: $(SRCDIR)/log.c $(SRCDIR)/log.h Makefile
+rtmp.o: $(SRCDIR)/rtmp.c $(SRCDIR)/rtmp.h $(SRCDIR)/rtmp_sys.h $(SRCDIR)/handshake.h $(SRCDIR)/dh.h $(SRCDIR)/log.h $(SRCDIR)/amf.h Makefile
+amf.o: $(SRCDIR)/amf.c $(SRCDIR)/amf.h $(SRCDIR)/bytes.h $(SRCDIR)/log.h Makefile
+hashswf.o: $(SRCDIR)/hashswf.c $(SRCDIR)/http.h $(SRCDIR)/rtmp.h $(SRCDIR)/rtmp_sys.h Makefile
+parseurl.o: $(SRCDIR)/parseurl.c $(SRCDIR)/rtmp.h $(SRCDIR)/rtmp_sys.h $(SRCDIR)/log.h Makefile
